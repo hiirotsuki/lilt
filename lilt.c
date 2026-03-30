@@ -9,7 +9,7 @@
 #include <sys/ioctl.h>
 #include <locale.h>
 
-#include "libtmt/tmt.h"
+#include "tmt.h"
 
 #define DEFAULT_TITLE "Lilt"
 
@@ -221,7 +221,7 @@ static bool init_master (char * argv0, char * cshell, char ** run_cmd)
   if (asprintf(&argv[4], "%i,%i", slave_fd, master_fd) == -1) return false;
   for (int i = 0; i < cmd_len; i++) argv[5+i] = cmd[i];
 
-  if (vfork() == 0)
+  if (fork() == 0)
   {
     execv(argv0, argv);
     _exit(1); // Shouldn't be reached!
@@ -260,7 +260,8 @@ void init_slave (char * arg, char * argv[])
 
   setsid();
 
-  ioctl(slave_fd, TIOCSCTTY, 1);
+  if (ioctl(slave_fd, TIOCSCTTY, 1) < 0)
+    (void)ioctl(slave_fd, TIOCSCTTY, 0);
 
   struct winsize ws = {0};
   ws.ws_row = term_h;
